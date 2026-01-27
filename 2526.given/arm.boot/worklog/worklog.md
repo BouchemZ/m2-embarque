@@ -24,6 +24,8 @@ Reset exception en 0x0000.
 
 phase linkin entre .o
 
+.elf  executable linked file
+
 Plutot que d'avoir à utilisé une board avec un serial line pour on va utilisé QEMU.
 
 QEMU est un logiciel de virtualisation open source qui permet l'émulation et la virtualisation de divers systèmes d'exploitation et applications sur différentes plateformes matérielles.
@@ -146,7 +148,169 @@ Non
 
 ---
 
-# Execution
+# EXECUTION
+
+### Debug essentials
+
+Dans un terminal 
+
+```
+make debug
+```
+
+ou
+
+```
+$(QEMU) -M $(MACHINE) -cpu $(QCPU) -m $(MEMORY) $(VGA) $(SERIAL) -device loader,file=$(BUILD)/kernel.elf -gdb tcp::1234 -S
+```
+
+Dans l'autre
+
+```
+gdb-multiarch build/versatile/kernel.elf
+```
+
+puis on se connecte à la session debug qemu
+
+```
+(gdb) target remote localhost:1234
+```
+
+**step permet d"entrer" dans les fonctions pour les exécuter pas à pas alors que next les exécute sans s'arrêter**
+
+| Commande | Signification               |
+| -------- | --------------------------- |
+| next     | avance pas à pas C          |
+| nexti    | avance pas à pas Assembleur |
+| step     | avance pas à pas C          |
+| stepi    | avance pas à pas Assembleur |
+| finish   | retourne à l'appeleur       |
+| continue | reprendre l'exectution      |
+
+### BOOT SEQUENCE
+
+**Question:** did you understand the exception vector?
+
+    .equ    CPSR_USR_MODE,       0x10
+    .equ    CPSR_FIQ_MODE,       0x11
+    .equ    CPSR_IRQ_MODE,       0x12
+    .equ    CPSR_SVC_MODE,       0x13
+    .equ    CPSR_ABT_MODE,       0x17
+    .equ    CPSR_UND_MODE,       0x1B
+    .equ    CPSR_SYS_MODE,       0x1F
+    
+    .equ    CPSR_IRQ_FLAG,         0x80      /* when set, IRQs are disabled, at the core. */
+    .equ    CPSR_FIQ_FLAG,         0x40      /* when set, FIQs are disabled, at the core. */
+
+Définition de NOM, VALEUR
+
+Il y a une partie pour les modes, par exemple le code symbolisant qu'on est en usermode est 0x10
+
+Puis une partie pour les flags, par exemple pour verifier si les IRQs sont disabled on fait un & logique avec CPSR_IRQ_FLAG (c'est à dire 0x80)
+
+**Question:** did you understand the BSS section initialization?
+
+```
+.clear:
+    ldr    r4, =_bss_start
+    ldr    r9, =_bss_end
+    mov    r5, #0
+1:
+    stmia    r4!, {r5} 
+    cmp    r4, r9
+    blo    1b
+```
+
+entre autre, on recupere le debut et la fin du bss et on met le courrant (r4) au debut. On ecrit 0, et on increment, on verifie si on est à la fin, sinon on refait.
+
+**Question:** did you understand why there is a stack and where it is and
+how it grows?
+
+dans le linkerfile il etait deja écrit qu'on avait une stack de 4 Kb qui grandit vers le bas, c'est à que le bottom de la stack et 4kb apres la fin de la bss et que le top de la stack elle se rapproche de la bss, entre autre.
+
+### MAIN LOOP
+
+```c
+#undef ECHO_ZZZ
+```
+
+```c
+ while (1) {
+    uint8_t c;
+    if (0==uart_receive(UART0,&c))
+      continue;
+    if (c == 13) {
+      uart_send(UART0, '\r');
+      uart_send(UART0, '\n');
+    } else {
+      uart_send(UART0, c);
+    }
+  }
+```
+
+Not looking at the implementation in the source file `uart.c`,
+but looking at the header file `uart.h`, let's explain this loop.
+
+**Question:** explain the above loop.
+
+boucle infini,
+
+on cherche à recevoir un byte depuis UART0 que l'on stock dans c, si pas de byte on reessaye (spin)
+
+si on recois un byte, si c'est 13 alors on send '\r' puis '\n' dans UART0.
+
+                                    sinon on send c 
+
+**Question:** what are the bytes flowing back and forth through the UART0?
+
+périfiphérique d'entrée de la carte qui est très probablement connecté aux touches sur lesquel on appui dans le clavier
+
+```c
+#define ECHO_ZZZ
+```
+
+```c
+ while (1) {
+    uint8_t c;
+    while (0 == uart_receive(UART0, &c)) {
+      count++;
+      if (count > 50000000) {
+        uart_send_string(UART0, "\n\rZzzz....\n\r");
+        count = 0;
+      }
+    }
+    if (c == 13) {
+      uart_send(UART0, '\r');
+      uart_send(UART0, '\n');
+    } else {
+      uart_send(UART0, c);
+    }
+  }
+```
+
+**Question:** explain the above loop.
+
+boucle infini,
+
+on boucle sur la reception à UART0, tant qu'on a pas reçu un byte on incremente count, toutes les 50000000 incrementation ça send ZZZZZ
+
+dès que ça recoit un byte, pareil qu'avant 
+
+**Question:** what are the bytes flowing back and forth through the UART0?
+
+Let's continue with `ECHO_ZZZ` as **defined**.
+
+**Question:** what is the printing of "Zzzz...." telling you?
+
+ça nous dis qu'il n'y a pas eu de reception de byte, mais surtout ça nous montre que la machine ne s'est pas 'endormi' qu'elle est tout le temps en execution
+
+---
+
+# DEBUGGING
+
+
+
+---
 
 # First Sprint
 
