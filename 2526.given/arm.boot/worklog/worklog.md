@@ -176,16 +176,18 @@ puis on se connecte à la session debug qemu
 (gdb) target remote localhost:1234
 ```
 
-**step permet d"entrer" dans les fonctions pour les exécuter pas à pas alors que next les exécute sans s'arrêter**
+**step permet de "plonger" dans les fonctions appeler pour les exécuter pas à pas alors que next "saute l'interieure de la fonction**
 
-| Commande | Signification               |
-| -------- | --------------------------- |
-| next     | avance pas à pas C          |
-| nexti    | avance pas à pas Assembleur |
-| step     | avance pas à pas C          |
-| stepi    | avance pas à pas Assembleur |
-| finish   | retourne à l'appeleur       |
-| continue | reprendre l'exectution      |
+| Commande   | Signification                            |
+| ---------- | ---------------------------------------- |
+| break      | break function_name                      |
+| next       | avance pas à pas C                       |
+| nexti      | avance pas à pas Assembleur              |
+| step       | avance pas à pas C                       |
+| stepi      | avance pas à pas Assembleur              |
+| finish     | retourne à l'appeleur                    |
+| continue   | reprendre l'exectution (jusqu'au next b) |
+| ctrl x + a | code + pointeur                          |
 
 ### BOOT SEQUENCE
 
@@ -294,7 +296,9 @@ boucle infini,
 
 on boucle sur la reception à UART0, tant qu'on a pas reçu un byte on incremente count, toutes les 50000000 incrementation ça send ZZZZZ
 
-dès que ça recoit un byte, pareil qu'avant 
+si on recois un byte, si c'est 13 alors on send '\r' puis '\n' dans UART0.
+
+                                    sinon on send c 
 
 **Question:** what are the bytes flowing back and forth through the UART0?
 
@@ -308,7 +312,77 @@ Let's continue with `ECHO_ZZZ` as **defined**.
 
 # DEBUGGING
 
+- start a debug session
 
+- set a breakpoint in `_start`
+
+- step in the function `check_stacks`
+
+- verify the addresses `max` and `addr`, printing them with `gdb`
+
+```
+make debu
+```
+
+```
+gdb-multiarch build/versatile/kernel.elf
+target remote localhost:1234
+b _start
+```
+
+(gdb) print max
+$2 = (void *) 0x4000
+
+(gdb) print addr
+$3 = (void *) 0x23b0
+
+```
+zak@zak-IdeaPad-1-15ALC7:~/College_Work/embarque/gruber/2526.given/arm.boot/build/versatile$ ls -l kernel.*
+-rwxrwxr-x 1 zak zak  5025 Feb  2 14:16 kernel.bin
+-rwxrwxr-x 1 zak zak 14668 Feb  2 14:16 kernel.elf
+```
+
+**Question:** explain why the `kernel.elf` is larger than the `kernel.bin`
+
+elf : executable linkable format files
+
+generer après la linking phase donc tout les symboles ont été résolu et assemble tout les .o
+
+bin: binary files
+
+juste du code
+
+**Question:** explain the code in the function `check_memory`.
+
+on recupère la taille utilisé qui été definie dans le makefile MEMORY soit 16kb donc 0x4000
+
+on recupère là ou pointe stack_top, c'est à dire la fin de region memoire qui nous est reserve, qui lui été defini dans le linker file.
+
+si stack_top > max, alors le top de notre stack dépasse les 16Kb qui nous était attribué de base, donc on panique
+
+On veut rajouter kprintf, pour ça je change ma target dans le make file de cette manière
+
+```
+# Object files to build and link together
+objs= exception.o startup.o main.o uart.o kprintf.o
+```
+
+```
+zak@zak-IdeaPad-1-15ALC7:~/College_Work/embarque/gruber/2526.given/arm.boot$ ls -l build/versatile/kernel*
+-rwxrwxr-x 1 zak zak 11675 Feb  2 14:48 build/versatile/kernel.bin
+-rwxrwxr-x 1 zak zak 26736 Feb  2 14:48 build/versatile/kernel.elf
+```
+
+Le code ne run plus, à priori un problème de mémoire, on a va donc rajouter de l'espace en faisant MEMORY = 32 dans le makefile
+
+Maintenant ça marche
+
+```
+(gdb) p max
+$5 = (void *) 0x4000
+(gdb) p addr 
+$6 = (void *) 0x3da0
+```
 
 ---
 

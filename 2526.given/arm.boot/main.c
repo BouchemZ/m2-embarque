@@ -20,12 +20,24 @@ void wait(){
 	for (int i=0; i<1000000; i++){
 	}
 }
+uint32_t stack_top;
+
+void check_memory() {
+  void *max = (void*)MEMORY;
+  void *addr = &stack_top;
+  if (addr >= max)
+    panic();
+}
 
 /**
  * This is the C entry point, upcalled once the hardware has been setup properly
  * in assembly language, see the startup.s file.
  */
 void _start() {
+  check_memory();
+
+  volatile uint32_t *p = (uint32_t *)0xDEADBEEF;
+  uint32_t x = *p;
 
   uart_send_string(UART0, "\nFor information:\n");
   uart_send_string(UART0, "  - Quit with \"C-a c\" to get to the QEMU console.\n");
