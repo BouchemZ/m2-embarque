@@ -384,6 +384,54 @@ $5 = (void *) 0x4000
 $6 = (void *) 0x3da0
 ```
 
+One of the main difference when debugging an embedded system
+is with respect to faulty addresses, either manipulating data 
+or executing code. Invalid memory accesses 
+do raise ***hardware exceptions***, making the execution flow
+go through the hardware exception vector at the address 0x0000-0000.
+
+When does that happen?
+
+- undefined instruction exception
+  - the execution strays somewhere where it is not valid assembly code,
+    but the address range is valid memory
+  - the executed code has been trashed via faulty pointers
+- prefetch abort
+  - the execution strays in an invalid address range in memory
+- data abort
+  - a load or store operation tries to manipulate an invalid address in memory
+
+On Linux, the operating system catches those exceptions and surface them through SEGV signal that GDB understands.
+
+```
+(gdb) disassemble _start
+Dump of assembler code for function _start:
+   0x000010e0 <+0>:    push    {r11, lr}
+   0x000010e4 <+4>:    add    r11, sp, #4
+   0x000010e8 <+8>:    sub    sp, sp, #24
+   0x000010ec <+12>:    bl    0x10a0 <check_memory>
+   0x000010f0 <+16>:    movw    r3, #48879    @ 0xbeef
+   0x000010f4 <+20>:    movt    r3, #57005    @ 0xdead
+   0x000010f8 <+24>:    str    r3, [r11, #-12]
+   0x000010fc <+28>:    ldr    r3, [r11, #-12]
+   0x00001100 <+32>:    ldr    r3, [r3]
+   0x00001104 <+36>:    str    r3, [r11, #-16]
+   0x00001108 <+40>:    movw    r1, #11508    @ 0x2cf4
+   0x0000110c <+44>:    movt    r1, #0
+   0x00001110 <+48>:    mov    r0, #4096    @ 0x1000
+   0x00001114 <+52>:    movt    r0, #4127    @ 0x101f
+   0x00001118 <+56>:    bl    0x12e0 <uart_send_string>
+   0x0000111c <+60>:    movw    r1, #11528    @ 0x2d08
+   0x00001120 <+64>:    movt    r1, #0
+   0x00001124 <+68>:    mov    r0, #4096    @ 0x1000
+   0x00001128 <+72>:    movt    r0, #4127    @ 0x101f
+   0x0000112c <+76>:    bl    0x12e0 <uart_send_string>
+   0x00001130 <+80>:    movw    r1, #11580    @ 0x2d3c
+   0x00001134 <+84>:    movt    r1, #0
+```
+
+disassemble func donne la version assembleur de la function donné
+
 ---
 
 # First Sprint
@@ -392,3 +440,13 @@ $6 = (void *) 0x3da0
 - [Understanding the build](./build.md)
 - [Understanding the execution](./execution.md)
 - [Advanced debugging](./debugging.md)
+
+---
+
+# Second week
+
+## Console
+
+Je faisais (probablement mal) plusieurs appels de uart_receive lors du démarrage d'un esc sequence, ça mener plusieurs fois à des 'fuites' qui faiait que je devrais l'un des bytes de la sequence comme un byte classique printable et je le printer dans le terminal.
+
+J'ai changé pour un suivi de l'état, il n'y a plus de uart_receive en dehors de celui appelé en avant le console_echo. chaque appel de console_echo est donc plus court dans le sens ou j'ai principale des switch et de if avec une profondeur basse.
