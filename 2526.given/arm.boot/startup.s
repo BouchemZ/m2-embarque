@@ -38,9 +38,9 @@ _reset_handler:
  	/*
  	 * Now upcall the C entry function  _start(void)
  	 */
-	MRC p15, 0, r0, c1, c0, 0
-	ORR r0, r0, #(1 << 1)   @ SCTLR.A
-	MCR p15, 0, r0, c1, c0, 0
+	// MRC p15, 0, r0, c1, c0, 0
+	// ORR r0, r0, #(1 << 1)   @ SCTLR.A
+	// MCR p15, 0, r0, c1, c0, 0
 .upcall:
  	ldr r3,=_start
  	mov pc,r3
