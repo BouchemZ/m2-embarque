@@ -21,6 +21,7 @@ void wait(){
 	for (int i=0; i<1000000; i++){
 	}
 }
+
 uint32_t stack_top;
 
 void check_memory() {
@@ -28,6 +29,17 @@ void check_memory() {
   void *addr = &stack_top;
   if (addr >= max)
     panic();
+}
+
+// cursor loop
+int  cursor_ind = 0;
+char cursor_char[8]= { '|', '/', '-', '\\', '|', '/', '-', '\\', };
+
+void blink_cursor(){
+  uart_send_string(UART0,"\033[s");
+  uart_send(UART0,cursor_char[cursor_ind]);
+  uart_send_string(UART0,"\033[u");
+  cursor_ind  = (cursor_ind == 7) ? 0 : cursor_ind + 1;
 }
 
 void does_nothing(){
@@ -40,7 +52,15 @@ void does_nothing(){
 void _start() {
   check_memory();
   console_init(does_nothing);
+  int counter = 0;
   while (1) {
+    counter ++;
+
+    if (counter == 500000) {
+      blink_cursor();
+      counter = 0;
+    }
+
     uint8_t c;
     if (0==uart_receive(UART0,&c))
       continue;

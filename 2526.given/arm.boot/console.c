@@ -25,6 +25,7 @@ typedef enum {
 } esc_state_t;
 
 esc_state_t esc_state = IDLE;
+
 /*
  * Functions to move the cursor from its current position
  */
@@ -86,7 +87,7 @@ void cursor_show(){
  * Function to set the color, either for the ink or background
  */
 void console_color(uint8_t color){
-
+    uart_send_string(UART0,"\033[55m");
 }
 
 /*
@@ -108,6 +109,7 @@ void console_clear(){
  * the key `Enter`.
  */
 void console_init(void (*callback)(char*)){
+    cursor_hide();
     console_clear();
 }
 
