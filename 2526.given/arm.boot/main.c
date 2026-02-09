@@ -2,6 +2,17 @@
 #include "console.h"
 #include "uart.h"
 
+/* Forward declaration of kprintf from kprintf.c */
+void kprintf(const char *fmt, ...);
+
+static size_t strlen(const char *s) {
+    size_t len = 0;
+    while (s[len] != '\0') {
+        len++;
+    }
+    return len;
+}
+
 /*
  * Define ECHO_ZZZ to have a periodic reminder that this code is polling
  * the UART, actively. This means the processor is running continuously.
@@ -45,13 +56,23 @@ void blink_cursor(){
 void does_nothing(){
   return;
 }
+void da_vinci(char* s){
+  char res[79];
+  int len = strlen(s);
+  for (int i=0; i<len; i++){
+    res[i] = s[len-1-i];
+  }
+  res[len] = '\0';
+  kprintf("\nDa Vinci says:\n");
+  kprintf("%s\n", res);
+}
 /**
  * This is the C entry point, upcalled once the hardware has been setup properly
  * in assembly language, see the startup.s file.
  */
 void _start() {
   check_memory();
-  console_init(does_nothing);
+  console_init(da_vinci);
   int counter = 0;
   while (1) {
     counter ++;

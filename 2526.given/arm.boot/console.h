@@ -1,5 +1,6 @@
 #ifndef _CONSOLE_H_
 #include "stdint.h"
+#include <stddef.h>
 #define _CONSOLE_H_
 
 /*

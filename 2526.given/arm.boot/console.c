@@ -26,6 +26,15 @@ typedef enum {
 
 esc_state_t esc_state = IDLE;
 
+char line_buffer[79];
+int line_buffer_index = 0;
+
+void reset_line_buffer(){
+    for(int i=0; i<79; i++){
+        line_buffer[i] = '\0';
+    }
+}
+
 /*
  * Functions to move the cursor from its current position
  */
@@ -38,23 +47,29 @@ void cursor_left(){
 
 void cursor_right(){
     if(cursor.col<79){
+        line_buffer[line_buffer_index] = ' ';
+        line_buffer_index++;
         cursor.col += 1;
         uart_send_string(UART0,"\033[1C");
     }
 }
 
 void cursor_down(){
+    /*
     if(cursor.row<24){
         cursor.row += 1;
         uart_send_string(UART0,"\033[1B");
     }
+    */
 }
 
 void cursor_up(){
+    /*
     if(cursor.row>0){
         cursor.row -= 1;
         uart_send_string(UART0,"\033[1A");
     }
+    */
 }
 
 /*
@@ -99,6 +114,8 @@ void console_clear(){
     uart_send_string(UART0,"\033[H\033[2J");
 }
 
+void (*line_callback)(char*);
+
 /*
  * Initializes the console, giving the callback
  * to call for each line entered on the keyboard.
@@ -109,6 +126,9 @@ void console_clear(){
  * the key `Enter`.
  */
 void console_init(void (*callback)(char*)){
+    /* save the callback for later invocation */
+    reset_line_buffer();
+    line_callback = callback;
     cursor_hide();
     console_clear();
 }
@@ -128,6 +148,16 @@ void console_echo(uint8_t byte){
     int row;
     cursor_position(&row,&col);
 
+    if( byte == '\r'){
+        if (line_callback != NULL) {
+            line_callback(line_buffer);
+            reset_line_buffer();
+            line_buffer_index = 0;
+            cursor_at(row+1,0);
+        }
+        return;
+    }
+
     switch (esc_state)
     {
     case IDLE:
@@ -141,6 +171,8 @@ void console_echo(uint8_t byte){
             // else just print char and sync cursor
             }else{
                 uart_send(UART0,byte);
+                line_buffer[line_buffer_index] = byte;
+                line_buffer_index++;
                 cursor_at(row,col+1);
             }
         }else if (byte == 27) {
