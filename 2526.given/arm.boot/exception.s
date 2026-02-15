@@ -40,7 +40,12 @@ irq_handler_addr: .word _isr_handler
 fiq_handler_addr: .word _fiq_handler
 
 _isr_handler:
-    b _isr_handler
+    // b _isr_handler used to simply loop
+    sub lr,lr,#4
+    stmfd sp!, {r0-r12, lr}
+    bl isr_handler
+    ldmfd sp!, {r0-r12, pc}^
+    
 
 _unused_handler:
     b _unused_handler // unused interrupt occurred
