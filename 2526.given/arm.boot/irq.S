@@ -48,6 +48,7 @@ _wfi:
 	MCR p15,0,r0,c7,c0,4
 #elif defined(CORTEX_A8)
 	dsb
+    cpsie i
 	wfi
 #else
 	#error "undefined architecture"
