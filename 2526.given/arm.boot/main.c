@@ -73,19 +73,10 @@ void da_vinci(char* s){
 void _start() {
   check_memory();
   console_init(da_vinci);
-  int counter = 0;
-  while (1) {
-    counter ++;
-
-    if (counter == 500000) {
-      blink_cursor();
-      counter = 0;
-    }
-
-    uint8_t c;
-    if (0==uart_receive(UART0,&c))
-      continue;
-    console_echo(c);
+  irqs_setup();
+  irqs_enable();
+  for(;;){
+    wfi();
   }
 }
 
