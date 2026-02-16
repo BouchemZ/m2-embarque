@@ -24,6 +24,7 @@
 #include "isr-mmio.h"
 #include "uart.h"
 #include "main.h"
+#include "console.h"
 #define ISR_H_
 
 /*

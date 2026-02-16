@@ -58,8 +58,12 @@ void vic_ack_irqs(uint32_t irqs){
     }
 }
 
-void uart0_handler() {
-    kprintf ("uart0 handler\n");
+void * (uart_handler)(uint32_t uart,void* callback(char)) {
+    kprintf ("Enter uart %d\n", uart);
+    char c;
+    if (uart_receive(uart,&c))
+        callback(c);
+    
 }
 
 /*
@@ -74,7 +78,7 @@ void irqs_setup(){
 void irqs_enable(){
     uart_irq_enable(UART0,RX_IRQ);
     uart_irq_enable(UART0,TX_IRQ);
-    irq_enable(UART0_IRQ,uart0_handler,NULL);
+    irq_enable(UART0_IRQ,(uart_handler)(UART0,console_echo),NULL);
     _irqs_enable();
 }
 // this is the equivalent of the core_disable_interrupts of the slide in week 3
