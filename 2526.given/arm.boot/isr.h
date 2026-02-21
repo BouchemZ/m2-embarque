@@ -65,8 +65,8 @@
 #define RX_IRQ 4
 #define TX_IRQ 5
 
-#define UART_IMSC_TXIM (1<<5)
-#define UART_IMSC_RXIM (1<<4)
+#define UART_IMSC_TXIM (1<<TX_IRQ)
+#define UART_IMSC_RXIM (1<<RX_IRQ)
 #define UART_IMSC_RT_TX_IM (UART_IMSC_TXIM | UART_IMSC_RXIM)
 
 /*
@@ -99,7 +99,7 @@ void uart0_handler();
 
 void uart_irq_enable(void* uart,uint32_t irq);
 // disables uart to send interrupts
-void uart_irq_disable(uint32_t uart,uint32_t irq);
+void uart_irq_disable(void* uart,uint32_t irq);
 
 /*
  * VIC behavior:

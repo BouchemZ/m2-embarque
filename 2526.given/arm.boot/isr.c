@@ -22,7 +22,7 @@
 #include "isr.h"
 
 typedef struct handler {
-    void (*callback)(void*);
+    void (*callback)(uint32_t,void*);
     void* cookie;
 } handler_t;
 
@@ -40,7 +40,7 @@ void isr_handler(){
         handler_t* handler;
         handler = &handlers[i];
         if (irqs & (1<<i)){
-            handler->callback(handler->cookie);
+            handler->callback(i,handler->cookie);
         }
     }
     vic_ack_irqs(irqs);
@@ -54,16 +54,13 @@ void vic_ack_irqs(uint32_t irqs){
     if (irqs & UART0_IRQ_MASK) {
         // clear/ack the interrupt at the uart level
         mmio_write32(UART0, UART_ICR, 1 << RX_IRQ);
-        mmio_write32(VIC_BASE_ADDR, VICINTCLEAR, UART0_IRQ_MASK);
     }
 }
 
-void * (uart_handler)(uint32_t uart,void* callback(char)) {
-    kprintf ("Enter uart %d\n", uart);
+void uart_handler(uint32_t irq, void* uart){
     char c;
     if (uart_receive(uart,&c))
-        callback(c);
-    
+        console_echo(c);
 }
 
 /*
@@ -78,7 +75,7 @@ void irqs_setup(){
 void irqs_enable(){
     uart_irq_enable(UART0,RX_IRQ);
     uart_irq_enable(UART0,TX_IRQ);
-    irq_enable(UART0_IRQ,(uart_handler)(UART0,console_echo),NULL);
+    irq_enable(UART0_IRQ,uart_handler,UART0);
     _irqs_enable();
 }
 // this is the equivalent of the core_disable_interrupts of the slide in week 3
@@ -105,7 +102,7 @@ void uart_irq_enable(void* uart,uint32_t irq){
 }
 
 // disables uart to send interrupts
-void uart_irq_disable(uint32_t uart,uint32_t irq){
+void uart_irq_disable(void* uart,uint32_t irq){
   // same as above, we assume the caller knows what they are doing
   uint32_t mask = mmio_read32(uart, UART_IMSC);
   // add our irq to it
