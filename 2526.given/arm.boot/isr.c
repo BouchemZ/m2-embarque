@@ -22,45 +22,47 @@
 #include "isr.h"
 
 typedef struct handler {
-    void (*callback)(void*);
+    void (*callback)(uint32_t,void*);
     void* cookie;
 } handler_t;
 
 handler_t handlers[NIRQS];
 
-void isr_handler(){
-    uint32_t irqs = vic_load_irqs();
-    for(uint32_t i = 0; i < NIRQS; i++){
-        handler_t* handler;
-        handler = &handlers[i];
-        if (irqs & (1<<i)){
-            handler->callback(handler->cookie);
-        }
-    }
-    vic_ack_irqs(irqs);
-    return;
-}
 
 // get the status of the interrupts
 uint32_t vic_load_irqs(){
     return mmio_read32(VIC_BASE_ADDR, VICIRQSTATUS);
 }
 
+void isr_handler(){
+    uint32_t irqs = vic_load_irqs();
+    for(uint8_t i = 0; i < NIRQS; i++){
+        handler_t* handler;
+        handler = &handlers[i];
+        if (irqs & (1<<i)){
+            handler->callback(i,handler->cookie);
+        }
+    }
+    vic_ack_irqs(irqs);
+    return;
+}
+
 // ack vic should clear uarticr to acknoledge, else interupts wont be requested again
 // should also ack at the vic level ?
 //
 void vic_ack_irqs(uint32_t irqs){
-    if (irqs == UART0_IRQ) {
-
-        mmio_write32(UART0,UART_ICR);
+    if (irqs & UART0_IRQ_MASK) {
         // clear/ack the interrupt at the uart level
         mmio_write32(UART0, UART_ICR, 1 << RX_IRQ);
+        mmio_write32(UART0, UART_ICR, 1 << TX_IRQ);
     }
-    
 }
-
-void uart0_handler(){
-
+//changed for ring use
+void uart_handler(uint8_t irq, void* uart){
+    char c;
+    while (uart_receive(uart,&c)){
+        ring_put(c);
+    }
 }
 
 /*
@@ -68,21 +70,18 @@ void uart0_handler(){
  */
 // this is the equivalent of the init of the slide in week 3
 void irqs_setup(){
-    // i have no idea what's meant to be done before the setup ?
+    mmio_write32(VIC_BASE_ADDR, VICINTSELECT, 0);
+    uart_irq_enable(UART0,RX_IRQ);
+    uart_irq_enable(UART0,TX_IRQ);
+    irq_enable(UART0_IRQ,uart_handler,UART0);
     _irqs_setup();
 }
 // this is the equivalent of the core_enable_interrupts of the slide in week 3
 void irqs_enable(){
-    uart_irq_enable(UART0,RX_IRQ);
-    uart_irq_enable(UART0,TX_IRQ);
-    irq_enable(UART0_IRQ,uart0_handler,NULL);
     _irqs_enable();
 }
 // this is the equivalent of the core_disable_interrupts of the slide in week 3
 void irqs_disable(){
-    uart_irq_disable(UART0,RX_IRQ);
-    uart_irq_disable(UART0,TX_IRQ);
-    irq_disable(UART0_IRQ);
     _irqs_disable();
 }
 // this is the equivalent of the halt of the slide in week 3
@@ -102,7 +101,7 @@ void uart_irq_enable(void* uart,uint32_t irq){
 }
 
 // disables uart to send interrupts
-void uart_irq_disable(uint32_t uart,uint32_t irq){
+void uart_irq_disable(void* uart,uint32_t irq){
   // same as above, we assume the caller knows what they are doing
   uint32_t mask = mmio_read32(uart, UART_IMSC);
   // add our irq to it
@@ -119,7 +118,7 @@ void irq_enable(uint32_t irq,void(*callback)(uint32_t,void*),void*cookie){
     mmio_write32(VIC_BASE_ADDR, VICINTENABLE, mask);
     // set callback and cookie
     handlers[irq].callback = callback;
-    handlers[irq].cookie = cookie; 
+    handlers[irq].cookie = cookie;
     return;
 }
 
@@ -132,7 +131,7 @@ void irq_disable(uint32_t irq){
     mmio_write32(VIC_BASE_ADDR, VICINTCLEAR, mask);
     // clear callback and cookie
     handlers[irq].callback = NULL;
-    handlers[irq].cookie = NULL; 
+    handlers[irq].cookie = NULL;
     return;
 }
 

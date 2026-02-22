@@ -22,8 +22,9 @@
 #ifndef ISR_H_
 #include "stdint.h"
 #include "isr-mmio.h"
-#include "main.h"
 #include "uart.h"
+#include "main.h"
+#include "console.h"
 #define ISR_H_
 
 /*
@@ -36,6 +37,10 @@
  */
 
 #define NIRQS 32
+
+#ifndef NULL
+#define NULL (void*)0
+#endif
 
 /*
  * UARTs
@@ -60,8 +65,8 @@
 #define RX_IRQ 4
 #define TX_IRQ 5
 
-#define UART_IMSC_TXIM (1<<5)
-#define UART_IMSC_RXIM (1<<4)
+#define UART_IMSC_TXIM (1<<TX_IRQ)
+#define UART_IMSC_RXIM (1<<RX_IRQ)
 #define UART_IMSC_RT_TX_IM (UART_IMSC_TXIM | UART_IMSC_RXIM)
 
 /*
@@ -81,6 +86,20 @@
 #define TIMER0_IRQ 4
 #define TIMER0_IRQ_MASK (1<<TIMER0_IRQ_MASK)
 
+uint32_t vic_load_irqs();
+
+void isr_handler();
+
+// ack vic should clear uarticr to acknoledge, else interupts wont be requested again
+// should also ack at the vic level ?
+//
+void vic_ack_irqs(uint32_t irqs);
+
+void uart0_handler();
+
+void uart_irq_enable(void* uart,uint32_t irq);
+// disables uart to send interrupts
+void uart_irq_disable(void* uart,uint32_t irq);
 
 /*
  * VIC behavior:

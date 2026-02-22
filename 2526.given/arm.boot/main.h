@@ -10,6 +10,9 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include "console.h"
+#include "uart.h"
+#include "ring.h"
 
 typedef uint8_t bool_t;
 #define TRUE 1

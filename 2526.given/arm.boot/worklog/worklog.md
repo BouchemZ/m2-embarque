@@ -450,3 +450,29 @@ disassemble func donne la version assembleur de la function donné
 Je faisais (probablement mal) plusieurs appels de uart_receive lors du démarrage d'un esc sequence, ça mener plusieurs fois à des 'fuites' qui faiait que je devrais l'un des bytes de la sequence comme un byte classique printable et je le printer dans le terminal.
 
 J'ai changé pour un suivi de l'état, il n'y a plus de uart_receive en dehors de celui appelé en avant le console_echo. chaque appel de console_echo est donc plus court dans le sens ou j'ai principale des switch et de if avec une profondeur basse.
+
+# IRQ
+
+## A faire
+
+re rajouter l'animation du curseur avec les irqs
+
+mais je vois pas comment le faire spin si il y a juste un wfi dans le main
+
+> voir commit 50dd4945d86ff498060b011eb9593d7d0380b2f4 pour le fonctionnement/utilisation de blink cursor
+
+## Pour le debugging
+
+x/wt ADDRESS+OFFSET (pour lire en binaire)
+
+UART0 IMSC
+
+```
+x/wt 0x101f1000+0x38
+```
+
+VICINTENABLE
+
+```
+x/wt 0x10140000+0x010
+```

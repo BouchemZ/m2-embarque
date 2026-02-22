@@ -1,6 +1,5 @@
 #include "main.h"
-#include "console.h"
-#include "uart.h"
+
 
 /* Forward declaration of kprintf from kprintf.c */
 void kprintf(const char *fmt, ...);
@@ -66,6 +65,37 @@ void da_vinci(char* s){
   kprintf("\nDa Vinci says:\n");
   kprintf("%s\n", res);
 }
+
+void shell(char* line, uint8_t offset){
+  char res[80];
+  for (int i=0; i<offset; i++){
+    res[i] = line[offset-1-i];
+  }
+  res[offset] = '\0';
+  kprintf("\nDa Vinci says:\n");
+  kprintf("%s\n", res);
+}
+
+volatile uint32_t head = 0;
+volatile uint32_t tail = 0 ;
+volatile uint8_t buffer[MAX_CHARS];
+
+char line[80];
+uint8_t offset;
+
+void process_ring(){
+  while(!ring_is_empty()){
+    uint8_t byte = ring_get();
+    uart_send(UART0,byte);
+    if(byte == '\r'){
+      shell(line,offset);
+      offset = 0;
+    }else{
+      line[offset++] = (char)byte;
+    }
+  }
+}
+
 /**
  * This is the C entry point, upcalled once the hardware has been setup properly
  * in assembly language, see the startup.s file.
@@ -73,19 +103,16 @@ void da_vinci(char* s){
 void _start() {
   check_memory();
   console_init(da_vinci);
-  int counter = 0;
-  while (1) {
-    counter ++;
-
-    if (counter == 500000) {
-      blink_cursor();
-      counter = 0;
+  irqs_setup();
+  irqs_enable();
+  for(;;){
+    process_ring();
+    irqs_disable();
+    if(ring_is_empty()){
+      wfi();
+    }else{
+      irqs_enable();
     }
-
-    uint8_t c;
-    if (0==uart_receive(UART0,&c))
-      continue;
-    console_echo(c);
   }
 }
 

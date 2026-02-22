@@ -45,7 +45,6 @@ _isr_handler:
     stmfd sp!, {r0-r12, lr}
     bl isr_handler
     ldmfd sp!, {r0-r12, pc}^
-    
 
 _unused_handler:
     b _unused_handler // unused interrupt occurred
