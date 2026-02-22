@@ -1,6 +1,5 @@
 #include "main.h"
-#include "console.h"
-#include "uart.h"
+
 
 /* Forward declaration of kprintf from kprintf.c */
 void kprintf(const char *fmt, ...);
@@ -66,6 +65,11 @@ void da_vinci(char* s){
   kprintf("\nDa Vinci says:\n");
   kprintf("%s\n", res);
 }
+
+volatile uint32_t head;
+volatile uint32_t tail;
+volatile uint8_t buffer[MAX_CHARS];
+
 /**
  * This is the C entry point, upcalled once the hardware has been setup properly
  * in assembly language, see the startup.s file.
