@@ -54,6 +54,7 @@ void vic_ack_irqs(uint32_t irqs){
     if (irqs & UART0_IRQ_MASK) {
         // clear/ack the interrupt at the uart level
         mmio_write32(UART0, UART_ICR, 1 << RX_IRQ);
+        mmio_write32(UART0, UART_ICR, 1 << TX_IRQ);
     }
 }
 //changed for ring use
