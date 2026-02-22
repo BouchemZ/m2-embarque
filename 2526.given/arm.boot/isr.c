@@ -69,20 +69,17 @@ void uart_handler(uint32_t irq, void* uart){
 // this is the equivalent of the init of the slide in week 3
 void irqs_setup(){
     mmio_write32(VIC_BASE_ADDR, VICINTSELECT, 0);
+    uart_irq_enable(UART0,RX_IRQ);
+    uart_irq_enable(UART0,TX_IRQ);
+    irq_enable(UART0_IRQ,uart_handler,UART0);
     _irqs_setup();
 }
 // this is the equivalent of the core_enable_interrupts of the slide in week 3
 void irqs_enable(){
-    uart_irq_enable(UART0,RX_IRQ);
-    uart_irq_enable(UART0,TX_IRQ);
-    irq_enable(UART0_IRQ,uart_handler,UART0);
     _irqs_enable();
 }
 // this is the equivalent of the core_disable_interrupts of the slide in week 3
 void irqs_disable(){
-    uart_irq_disable(UART0,RX_IRQ);
-    uart_irq_disable(UART0,TX_IRQ);
-    irq_disable(UART0_IRQ);
     _irqs_disable();
 }
 // this is the equivalent of the halt of the slide in week 3
