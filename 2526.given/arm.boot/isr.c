@@ -36,7 +36,7 @@ uint32_t vic_load_irqs(){
 
 void isr_handler(){
     uint32_t irqs = vic_load_irqs();
-    for(uint32_t i = 0; i < NIRQS; i++){
+    for(uint8_t i = 0; i < NIRQS; i++){
         handler_t* handler;
         handler = &handlers[i];
         if (irqs & (1<<i)){
@@ -56,11 +56,12 @@ void vic_ack_irqs(uint32_t irqs){
         mmio_write32(UART0, UART_ICR, 1 << RX_IRQ);
     }
 }
-
-void uart_handler(uint32_t irq, void* uart){
+//changed for ring use
+void uart_handler(uint8_t irq, void* uart){
     char c;
-    if (uart_receive(uart,&c))
-        console_echo(c);
+    while (uart_receive(uart,&c)){
+        ring_put(c);
+    }
 }
 
 /*
