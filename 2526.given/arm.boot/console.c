@@ -22,6 +22,7 @@ typedef enum {
     IDLE,
     ESC,
     ESC_BRACKET,
+    ESC_BRACKET_3,
 } esc_state_t;
 
 esc_state_t esc_state = IDLE;
@@ -207,16 +208,21 @@ void console_echo(uint8_t byte){
                 esc_state = IDLE;
                 break;
             case 51:
-                if(0 == uart_receive(UART0,&byte)) return;
-                if (byte == 126){
-                    uart_send_string(UART0,"\033[s");
-                    uart_send(UART0,' ');
-                    uart_send_string(UART0,"\033[u");
-                    esc_state = IDLE;
-                }
+                // this is for the delete escape sequence
+                esc_state = ESC_BRACKET_3;
                 break;
             default:
                 esc_state = IDLE;
         }
+        break;
+    case ESC_BRACKET_3:
+        /* expecting '~' */
+        if (byte == 126){
+            uart_send_string(UART0,"\033[s");
+            uart_send(UART0,' ');
+            uart_send_string(UART0,"\033[u");
+        }
+        esc_state = IDLE;
+        break;
     }
 }
