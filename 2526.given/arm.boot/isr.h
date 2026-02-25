@@ -25,6 +25,7 @@
 #include "uart.h"
 #include "main.h"
 #include "console.h"
+#include "timer.h"
 #define ISR_H_
 
 /*
@@ -37,10 +38,6 @@
  */
 
 #define NIRQS 32
-
-#ifndef NULL
-#define NULL (void*)0
-#endif
 
 /*
  * UARTs
@@ -75,16 +72,16 @@
  *       TIMER(0&1) IRQ = 4
  */
 #define TIMER3_IRQ 5
-#define TIMER3_IRQ_MASK (1<<TIMER3_IRQ_MASK)
+#define TIMER3_IRQ_MASK (1<<TIMER3_IRQ)
 
 #define TIMER2_IRQ 5
-#define TIMER2_IRQ_MASK (1<<TIMER2_IRQ_MASK)
+#define TIMER2_IRQ_MASK (1<<TIMER2_IRQ)
 
 #define TIMER1_IRQ 4
-#define TIMER1_IRQ_MASK (1<<TIMER1_IRQ_MASK)
+#define TIMER1_IRQ_MASK (1<<TIMER1_IRQ)
 
 #define TIMER0_IRQ 4
-#define TIMER0_IRQ_MASK (1<<TIMER0_IRQ_MASK)
+#define TIMER0_IRQ_MASK (1<<TIMER0_IRQ)
 
 uint32_t vic_load_irqs();
 

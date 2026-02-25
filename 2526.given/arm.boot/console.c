@@ -1,5 +1,4 @@
 #include "console.h"
-#include "uart.h"
 
 /*
  * Terminal Size: 
@@ -8,7 +7,6 @@
 */
 
 // current cursor position
-
 typedef struct {
     uint16_t row;
     uint16_t col;
@@ -16,8 +14,7 @@ typedef struct {
 
 static cursor_t cursor = {0, 0};
 
-// states for escape sequence  for the up, down, left, right arrows
-
+// states for escape sequence  for the up, down, left, right arrows and more
 typedef enum {
     IDLE,
     ESC,
@@ -27,34 +24,45 @@ typedef enum {
 
 esc_state_t esc_state = IDLE;
 
-char line_buffer[79];
-int line_buffer_index = 0;
+extern char line[79];
+extern uint8_t offset;
 
+/*
+ * Function to reset the line buffer, also sets offset to 0
+ */
 void reset_line_buffer(){
     for(int i=0; i<79; i++){
-        line_buffer[i] = '\0';
+        line[i] = '\0';
     }
+    offset = 0;
 }
 
 /*
- * Functions to move the cursor from its current position
+ * Function to move the cursor left
  */
 void cursor_left(){
     if(cursor.col>0){
         cursor.col -= 1;
+        offset -=1;
         uart_send_string(UART0,"\033[1D");
     }
 }
 
+/*
+ * Function to move the cursor right
+ */
 void cursor_right(){
     if(cursor.col<79){
-        line_buffer[line_buffer_index] = ' ';
-        line_buffer_index++;
+        line[offset] = ' ';
+        offset++;
         cursor.col += 1;
         uart_send_string(UART0,"\033[1C");
     }
 }
 
+/*
+ * Function to move the cursor down
+ */
 void cursor_down(){
     /*
     if(cursor.row<24){
@@ -64,6 +72,9 @@ void cursor_down(){
     */
 }
 
+/*
+ * Function to move the cursor up
+ */
 void cursor_up(){
     /*
     if(cursor.row>0){
@@ -149,19 +160,24 @@ void console_echo(uint8_t byte){
     int row;
     cursor_position(&row,&col);
 
-    if( byte == '\r'){
-        if (line_callback != NULL) {
-            line_callback(line_buffer);
-            reset_line_buffer();
-            line_buffer_index = 0;
-            cursor_at(row+1,0);
-        }
-        return;
-    }
-
     switch (esc_state)
     {
     case IDLE:
+        // if break char we do the callback
+        if( byte == '\r'){
+            if (line_callback != NULL) {
+                line_callback(line);
+                reset_line_buffer();
+                cursor_at(row+1,0);
+            }
+            return;
+        }
+        // ctrl + c
+        if (byte == 3){
+            reset_line_buffer();
+            console_clear();
+        }
+        // backspace
         // if printable char
         if (byte>=32 && byte<=126){
             // if at end of line save position, print char, restore position
@@ -169,11 +185,13 @@ void console_echo(uint8_t byte){
                 uart_send_string(UART0,"\033[s");
                 uart_send(UART0,byte);
                 uart_send_string(UART0,"\033[u");
+                //here offset should also be at the end of line
+                line[offset] = byte;
             // else just print char and sync cursor
             }else{
                 uart_send(UART0,byte);
-                line_buffer[line_buffer_index] = byte;
-                line_buffer_index++;
+                line[offset] = byte;
+                offset++;
                 cursor_at(row,col+1);
             }
         }else if (byte == 27) {

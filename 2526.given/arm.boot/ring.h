@@ -1,6 +1,6 @@
-#ifndef RING_H
+#ifndef _RING_H
 #include "stdint.h"
-#define RING_H
+#define _RING_H
 
 #ifndef MAX_CHARS
 #define MAX_CHARS 512

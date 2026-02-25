@@ -28,6 +28,7 @@ typedef struct handler {
 
 handler_t handlers[NIRQS];
 
+extern uint32_t irq_timer_tick;
 
 // get the status of the interrupts
 uint32_t vic_load_irqs(){
@@ -54,7 +55,10 @@ void vic_ack_irqs(uint32_t irqs){
     if (irqs & UART0_IRQ_MASK) {
         // clear/ack the interrupt at the uart level
         mmio_write32(UART0, UART_ICR, 1 << RX_IRQ);
-        mmio_write32(UART0, UART_ICR, 1 << TX_IRQ);
+        //mmio_write32(UART0, UART_ICR, 1 << TX_IRQ);
+    }
+    if (irqs & TIMER0_IRQ_MASK) {
+        timer_clear_interrupt(TIMER0);
     }
 }
 //changed for ring use
@@ -65,6 +69,17 @@ void uart_handler(uint8_t irq, void* uart){
     }
 }
 
+void timer_handler(uint8_t irq, void* timer){
+    timer_clear_interrupt(timer);
+    irq_timer_tick++;
+    /*
+    maybe add my cursor back later
+    if (irq_timer_tick % 500 == 0){
+        blink_cursor();
+    }
+    */
+}
+
 /*
  * VIC behavior:
  */
@@ -72,8 +87,10 @@ void uart_handler(uint8_t irq, void* uart){
 void irqs_setup(){
     mmio_write32(VIC_BASE_ADDR, VICINTSELECT, 0);
     uart_irq_enable(UART0,RX_IRQ);
-    uart_irq_enable(UART0,TX_IRQ);
+    timer_init(TIMER0);
+    timer_irq_enable(TIMER0);
     irq_enable(UART0_IRQ,uart_handler,UART0);
+    irq_enable(TIMER0_IRQ,timer_handler,TIMER0);
     _irqs_setup();
 }
 // this is the equivalent of the core_enable_interrupts of the slide in week 3

@@ -18,13 +18,6 @@ typedef uint8_t bool_t;
 #define TRUE 1
 #define FALSE 0
 
-#define ONESHOT 1
-#define WRAPPING 0
-
-#ifndef NULL
-#define NULL (void*)0
-#endif
-
 struct star{
   int delay;
   int line;

@@ -52,11 +52,8 @@ void blink_cursor(){
   cursor_ind  = (cursor_ind == 7) ? 0 : cursor_ind + 1;
 }
 
-void does_nothing(){
-  return;
-}
 void da_vinci(char* s){
-  char res[79];
+  char res[80];
   int len = strlen(s);
   for (int i=0; i<len; i++){
     res[i] = s[len-1-i];
@@ -66,33 +63,19 @@ void da_vinci(char* s){
   kprintf("%s\n", res);
 }
 
-void shell(char* line, uint8_t offset){
-  char res[80];
-  for (int i=0; i<offset; i++){
-    res[i] = line[offset-1-i];
-  }
-  res[offset] = '\0';
-  kprintf("\nDa Vinci says:\n");
-  kprintf("%s\n", res);
-}
-
 volatile uint32_t head = 0;
 volatile uint32_t tail = 0 ;
 volatile uint8_t buffer[MAX_CHARS];
 
-char line[80];
+char line[79];
 uint8_t offset;
+
+uint32_t irq_timer_tick = 0;
 
 void process_ring(){
   while(!ring_is_empty()){
     uint8_t byte = ring_get();
-    uart_send(UART0,byte);
-    if(byte == '\r'){
-      shell(line,offset);
-      offset = 0;
-    }else{
-      line[offset++] = (char)byte;
-    }
+    console_echo(byte);
   }
 }
 
