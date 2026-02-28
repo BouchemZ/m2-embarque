@@ -74,10 +74,11 @@ void timer_handler(uint8_t irq, void* timer){
     irq_timer_tick++;
     /*
     maybe add my cursor back later
+    */
     if (irq_timer_tick % 500 == 0){
         blink_cursor();
     }
-    */
+    
 }
 
 /*
