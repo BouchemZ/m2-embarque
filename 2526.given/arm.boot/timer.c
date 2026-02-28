@@ -6,6 +6,7 @@
 void timer_init(void* timer){
     // finish periodiic
     uint32_t value = TIMER_ENABLE | TIMER_MODE_PERIODIC | TIMER_SIZE_32;
+    mmio_write32(timer, TIMER_LOAD, 1000); // CPU fixed at 1MHz so is 1ms period
     mmio_write32(timer, TIMER_CONTROL, value);
 }
 
