@@ -78,7 +78,7 @@ void timer_handler(uint8_t irq, void* timer){
     if (irq_timer_tick % 500 == 0){
         blink_cursor();
     }
-    
+    update_top_line();
 }
 
 /*
