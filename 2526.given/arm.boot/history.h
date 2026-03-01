@@ -7,7 +7,7 @@
 #define HISTORY_SIZE 5
 
 extern char history[HISTORY_SIZE][80];
-extern uint8_t history_idx;
+extern int history_idx;
 
 
 void add_to_history(char* new_line);

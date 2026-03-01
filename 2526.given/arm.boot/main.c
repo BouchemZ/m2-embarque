@@ -12,7 +12,7 @@ uint8_t offset=0;
 uint32_t irq_timer_tick = 0;
 
 char history[HISTORY_SIZE][80];
-uint8_t history_idx = -1;
+int history_idx = -1;
 
 /* Forward declaration of kprintf from kprintf.c */
 void kprintf(const char *fmt, ...);

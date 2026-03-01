@@ -29,7 +29,7 @@ char empty_line[80] = {0};
 extern char line[80];
 extern uint8_t offset;
 
-extern uint8_t history_idx;
+extern int history_idx;
 
 extern uint32_t irq_timer_tick;
 
@@ -129,7 +129,7 @@ void cursor_down(){
     }
     cursor_at(2,1);
     kprintf(empty_line);
-    kprintf(history[history_idx]);
+    if(history_idx>=0) kprintf(history[history_idx]);
     /*
     if(cursor.row<24){
         cursor.row += 1;
@@ -216,6 +216,7 @@ void console_init(void (*callback)(char*)){
     line_callback = callback;
     cursor_hide();
     console_clear();
+    cursor_at(2,1);
 }
 
 /*
