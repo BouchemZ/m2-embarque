@@ -1,5 +1,18 @@
 #include "main.h"
 
+uint32_t stack_top;
+
+volatile uint32_t head = 0;
+volatile uint32_t tail = 0 ;
+volatile uint8_t buffer[MAX_CHARS];
+
+char line[80];
+uint8_t offset=0;
+
+uint32_t irq_timer_tick = 0;
+
+char history[HISTORY_SIZE][80];
+uint8_t history_idx = -1;
 
 /* Forward declaration of kprintf from kprintf.c */
 void kprintf(const char *fmt, ...);
@@ -32,45 +45,12 @@ void wait(){
 	}
 }
 
-uint32_t stack_top;
-
 void check_memory() {
   void *max = (void*)MEMORY;
   void *addr = &stack_top;
   if (addr >= max)
     panic();
 }
-
-// cursor loop
-int  cursor_ind = 0;
-char cursor_char[8]= { '|', '/', '-', '\\', '|', '/', '-', '\\', };
-
-void blink_cursor(){
-  uart_send_string(UART0,"\033[s");
-  uart_send(UART0,cursor_char[cursor_ind]);
-  uart_send_string(UART0,"\033[u");
-  cursor_ind  = (cursor_ind == 7) ? 0 : cursor_ind + 1;
-}
-
-void da_vinci(char* s){
-  char res[80];
-  int len = strlen(s);
-  for (int i=0; i<len; i++){
-    res[i] = s[len-1-i];
-  }
-  res[len] = '\0';
-  kprintf("\nDa Vinci says:\n");
-  kprintf("%s\n", res);
-}
-
-volatile uint32_t head = 0;
-volatile uint32_t tail = 0 ;
-volatile uint8_t buffer[MAX_CHARS];
-
-char line[79];
-uint8_t offset;
-
-uint32_t irq_timer_tick = 0;
 
 void process_ring(){
   while(!ring_is_empty()){
@@ -89,13 +69,13 @@ void _start() {
   irqs_setup();
   irqs_enable();
   for(;;){
+    //kprintf("Tick: %u\n", irq_timer_tick);
     process_ring();
     irqs_disable();
     if(ring_is_empty()){
       wfi();
-    }else{
-      irqs_enable();
     }
+    irqs_enable();
   }
 }
 

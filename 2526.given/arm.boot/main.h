@@ -13,24 +13,8 @@
 #include "console.h"
 #include "uart.h"
 #include "ring.h"
+#include "history.h"
 
-typedef uint8_t bool_t;
-#define TRUE 1
-#define FALSE 0
-
-struct star{
-  int delay;
-  int line;
-  int col;
-  int index;
-  int charac[8];
-  bool_t display;
-};
-
-void moveStar(struct star *s);
-void cursor(int c, int l);
-void push_first_event();
-void echo(uint32_t uartno, void *cookie);
 
 void panic();
 void kprintf(const char *fmt, ...);
