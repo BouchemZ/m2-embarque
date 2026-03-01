@@ -1,8 +1,11 @@
 #ifndef _CONSOLE_H_
-#include "stdint.h"
+#define _CONSOLE_H_
+
+#include <stdint.h>
 #include <stddef.h>
 #include "uart.h"
-#define _CONSOLE_H_
+#include "history.h"
+
 
 /*
  * Terminal Size: 
@@ -45,6 +48,9 @@
 #define BG_CYAN (CYAN+10)
 #define BG_WHITE (WHITE+10)
 
+void blink_cursor();
+void da_vinci(char* s);
+void update_top_line();
 /*
  * Functions to move the cursor from its current position
  */
