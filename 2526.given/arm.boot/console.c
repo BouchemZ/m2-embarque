@@ -24,8 +24,6 @@ typedef enum {
 
 esc_state_t esc_state = IDLE;
 
-char empty_line[80] = {0};
-
 extern char line[80];
 extern uint8_t offset;
 
@@ -78,7 +76,7 @@ void update_top_line(){
     uart_send_string(UART0,"\033[s");
     
     cursor_at(1,1);
-    kprintf(empty_line);
+    current_line_clear();
     cursor_at(1,1);
     kprintf("Time : %u",irq_timer_tick);
     //retunr to saved pos
@@ -128,7 +126,7 @@ void cursor_down(){
         reset_line_buffer();
     }
     cursor_at(2,1);
-    kprintf(empty_line);
+    current_line_clear();
     if(history_idx>=0) kprintf(history[history_idx]);
     /*
     if(cursor.row<24){
@@ -144,11 +142,12 @@ void cursor_down(){
 void cursor_up(){
     if(history_idx < HISTORY_SIZE-1) history_idx ++;
     cursor_at(2,1);
-    kprintf(empty_line);
+    current_line_clear();
     copy_from_history(line);
     offset = strlen(line);
-    cursor_at(2,1);
     kprintf(line);
+    cursor_at(2,offset+1);
+    
     /*
     if(cursor.row>0){
         cursor.row -= 1;
@@ -199,6 +198,10 @@ void console_clear(){
     uart_send_string(UART0,"\033[H\033[2J");
 }
 
+void current_line_clear(){
+    uart_send_string(UART0,"\033[2K");
+}
+
 void (*line_callback)(char*);
 
 /*
@@ -234,12 +237,13 @@ void console_echo(uint8_t byte){
     {
     case IDLE:
         if(byte == 127 || byte == 8){
+            if(offset == 0) return;
             if(offset == cursor.col -1){
                 offset --;
-                line[cursor.col-1] = '\0';
+                line[offset] = '\0';
                 cursor_left();
             }else{
-                line[cursor.col-1] = ' ';
+                line[cursor.col-2] = ' ';
                 cursor_left();
 
             }
@@ -259,12 +263,13 @@ void console_echo(uint8_t byte){
         if (byte == 3){
             reset_line_buffer();
             console_clear();
+            cursor_at(2,1);
         }
         // backspace
         // if printable char
         if (byte>=32 && byte<=126){
             // if at end of line save position, print char, restore position
-            if (cursor.col==78){
+            if (cursor.col==79){
                 uart_send_string(UART0,"\033[s");
                 uart_send(UART0,byte);
                 uart_send_string(UART0,"\033[u");
@@ -272,10 +277,15 @@ void console_echo(uint8_t byte){
                 line[offset] = byte;
             // else just print char and sync cursor
             }else{
-                uart_send(UART0,byte);
+                if(cursor.col -1 == offset){
+                    uart_send(UART0,byte);
+                    line[offset] = byte;
+                    offset++;
+                }else{
+                    uart_send(UART0,byte);
+                    line[cursor.col-1] = byte;
+                }
                 cursor.col += 1;
-                line[offset] = byte;
-                offset++;
             }
         }else if (byte == 27) {
             esc_state = ESC;
