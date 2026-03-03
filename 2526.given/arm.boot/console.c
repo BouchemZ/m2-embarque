@@ -73,6 +73,9 @@ void da_vinci(char* s){
 }
 
 void update_top_line(){
+    uint16_t saved_row = cursor.row;
+    uint16_t saved_col = cursor.col;
+
     //save cursor
     uart_send_string(UART0,"\033[s");
     
@@ -82,6 +85,9 @@ void update_top_line(){
 
     //retunr to saved pos
     uart_send_string(UART0,"\033[u");
+
+    cursor.row = saved_row;
+    cursor.col = saved_col;
 }
 
 /*

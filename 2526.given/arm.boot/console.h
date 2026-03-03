@@ -50,7 +50,7 @@
 
 void blink_cursor();
 void da_vinci(char* s);
-void update_top_line();
+
 /*
  * Functions to move the cursor from its current position
  */

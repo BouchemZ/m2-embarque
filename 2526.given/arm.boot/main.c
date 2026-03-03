@@ -59,6 +59,7 @@ void rx_notify(void* cookie){
       console_echo(buffer[i]);
     }
   }
+  event_count++;
 }
 
 void stream_setup(){
