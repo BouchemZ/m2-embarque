@@ -64,16 +64,6 @@ void process_ring(){
 stream_t streams[2]; // 0 for uart0, 1 for uart1 but not used
 uint32_t event_count = 0;
 
-void process_stream(int stream){
-    // if there is a read listener and there are bytes to read, call the listener
-    while (streams[stream].read_listener.callback != NULL && !ring_is_empty(&streams[stream].rx_ring)){
-        streams[stream].read_listener.callback(streams[stream].read_listener.cookie);
-    }
-    // if there is a write listener and there is room to write, call the listener
-    while (streams[stream].write_listener.callback != NULL && !ring_is_full(&streams[stream].tx_ring)){
-        streams[stream].write_listener.callback(streams[stream].write_listener.cookie);
-    }
-}
 
 void stream_setup(){
     stream_set_read_listener(0, console_echo, (void*)UART0);
