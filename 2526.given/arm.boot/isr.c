@@ -80,7 +80,7 @@ void timer_handler(uint8_t irq, void* timer){
         blink_cursor();
     }
     if (irq_timer_tick % 1000 == 0){
-        update_top_line();
+        //update_top_line();
     }
 }
 
