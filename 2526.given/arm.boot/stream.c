@@ -1,6 +1,7 @@
 #include "stream.h"
 
 extern stream_t streams[2];
+extern uint32_t event_count;
 
 /*
 * Sets the read listener for the given stream.
@@ -55,12 +56,14 @@ int stream_write(int stream, uint8_t* buffer, size_t length){
 
 void process_stream(int stream){
     // if there is a read listener and there are bytes to read, call the listener
-    if (streams[stream].read_listener.callback != NULL && !ring_is_empty(&streams[stream].rx_ring)){
+    while (streams[stream].read_listener.callback != NULL && !ring_is_empty(&streams[stream].rx_ring)){
         streams[stream].read_listener.callback(streams[stream].read_listener.cookie);
+        event_count++;
     }
     // if there is a write listener and there is room to write, call the listener
-    if (streams[stream].write_listener.callback != NULL && !ring_is_full(&streams[stream].tx_ring)){
+    while (streams[stream].write_listener.callback != NULL && !ring_is_full(&streams[stream].tx_ring)){
         streams[stream].write_listener.callback(streams[stream].write_listener.cookie);
+        event_count++;
     }
 }
 
