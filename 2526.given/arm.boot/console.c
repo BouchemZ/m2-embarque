@@ -78,8 +78,7 @@ void update_top_line(){
     
     cursor_at(1,1);
     current_line_clear();
-    kprintf("Time : %u",irq_timer_tick/1000);
-    kprintf(" | Events processed : %u", event_count);
+    kprintf("Time : %u  | Events processed : %u",irq_timer_tick/1000,event_count);
 
     //retunr to saved pos
     uart_send_string(UART0,"\033[u");
