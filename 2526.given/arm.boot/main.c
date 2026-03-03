@@ -2,12 +2,6 @@
 
 uint32_t stack_top;
 
-ring_t ring = {
-    .head = 0,
-    .tail = 0,
-    .buffer = {0}
-};
-
 char line[80];
 uint8_t offset=0;
 
@@ -54,35 +48,24 @@ void check_memory() {
     panic();
 }
 
-void process_ring(){
-  while(!ring_is_empty(&ring)){
-    uint8_t byte = ring_get(&ring);
-    console_echo(byte);
-  }
-}
-
 stream_t streams[2]; // 0 for uart0, 1 for uart1 but not used
 uint32_t event_count = 0;
 
+void rx_notify(void* cookie){
+  uint8_t buffer[32];
+  int count;
+  while((count = stream_read(0, buffer, 32)) != 0){
+    for (int i=0; i<count; i++){
+      console_echo(buffer[i]);
+    }
+  }
+}
 
 void stream_setup(){
-    stream_set_read_listener(0, console_echo, (void*)UART0);
+    stream_set_read_listener(0, rx_notify, (void*)UART0);
     stream_set_write_listener(0, NULL, NULL);
 }
-/*
-void process_stream(int stream){
-    // if there is a read listener and there are bytes to read, call the listener
-    while (streams[stream].read_listener.callback != NULL && !ring_is_empty(&streams[stream].rx_ring)){
-        streams[stream].read_listener.callback(ring_get(&streams[stream].rx_ring),streams[stream].read_listener.cookie);
-        event_count++;
-    }
-    // if there is a write listener and there is room to write, call the listener
-    while (streams[stream].write_listener.callback != NULL && !ring_is_full(&streams[stream].tx_ring)){
-        streams[stream].write_listener.callback(streams[stream].write_listener.cookie);
-        event_count++;
-    }
-}
-*/
+
 /**
  * This is the C entry point, upcalled once the hardware has been setup properly
  * in assembly language, see the startup.s file.
@@ -91,12 +74,11 @@ void _start() {
   check_memory();
   console_init(da_vinci);
   irqs_setup();
+  stream_setup();
   irqs_enable();
   for(;;){
-    //kprintf("Tick: %u\n", irq_timer_tick);
-    process_ring();
     irqs_disable();
-    if(ring_is_empty(&ring)){
+    if(ring_is_empty(&streams[0].rx_ring)){
       wfi();
     }
     irqs_enable();

@@ -30,6 +30,7 @@ handler_t handlers[NIRQS];
 
 extern uint32_t irq_timer_tick;
 extern ring_t ring;
+extern stream_t streams[2];
 
 // get the status of the interrupts
 uint32_t vic_load_irqs(){
@@ -66,8 +67,9 @@ void vic_ack_irqs(uint32_t irqs){
 void uart_handler(uint8_t irq, void* uart){
     char c;
     while (uart_receive(uart,&c)){
-        ring_put(&ring,c);
+        ring_put(&streams[0].rx_ring, c);
     }
+    streams[0].read_listener.callback(streams[0].read_listener.cookie);
 }
 
 void timer_handler(uint8_t irq, void* timer){

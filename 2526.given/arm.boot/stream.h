@@ -9,7 +9,7 @@
 #define STREAM_SIZE 512
 
 typedef struct event {
-    void (*callback)(uint8_t,void*);
+    void (*callback)(void*);
     void* cookie;
 } event_t;
 
@@ -45,17 +45,13 @@ void stream_set_write_listener(int stream, void (*listener)(void*), void* cookie
 * May read zero bytes, if none are available. Never blocks.
 * Returns the number of bytes read; returns -1 if the end of stream has been reached.
 */
-int stream_read(int stream, ring_t* ring, size_t length);
+int stream_read(int stream, uint8_t* buffer, size_t length);
 
 /*
 * Write as many bytes as possible, from the given buffer,
 * up to the given "length" bytes. Never blocks.
 * Returns the number of bytes written; returns -1 if the end of stream has been reached.
 */
-int stream_write(int stream, ring_t* ring, size_t length);
-
-
-// stream l'id du stream à notifier
-void stream_notify(int stream);
+int stream_write(int stream, uint8_t* buffer, size_t length);
 
 #endif /* _STREAM_H_ */
