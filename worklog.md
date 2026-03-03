@@ -480,3 +480,5 @@ x/wt 0x10140000+0x010
 # Evenementielle/Stream
 
 Je comprends en principe mais là j'ai dû mal à appliquer
+
+Quand j'active l'update topline j'ai l'impression de perdre des byte. Porbablement trop de send, en plus de ça, ça arrive qu'ils n'arrivent pas en même temps.
