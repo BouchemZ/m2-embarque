@@ -69,7 +69,20 @@ void stream_setup(){
     stream_set_read_listener(0, console_echo, (void*)UART0);
     stream_set_write_listener(0, NULL, NULL);
 }
-
+/*
+void process_stream(int stream){
+    // if there is a read listener and there are bytes to read, call the listener
+    while (streams[stream].read_listener.callback != NULL && !ring_is_empty(&streams[stream].rx_ring)){
+        streams[stream].read_listener.callback(ring_get(&streams[stream].rx_ring),streams[stream].read_listener.cookie);
+        event_count++;
+    }
+    // if there is a write listener and there is room to write, call the listener
+    while (streams[stream].write_listener.callback != NULL && !ring_is_full(&streams[stream].tx_ring)){
+        streams[stream].write_listener.callback(streams[stream].write_listener.cookie);
+        event_count++;
+    }
+}
+*/
 /**
  * This is the C entry point, upcalled once the hardware has been setup properly
  * in assembly language, see the startup.s file.

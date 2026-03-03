@@ -32,10 +32,10 @@ void stream_set_write_listener(int stream, void (*listener)(void*), void* cookie
 * May read zero bytes, if none are available. Never blocks.
 * Returns the number of bytes read; returns -1 if the end of stream has been reached.
 */
-int stream_read(int stream, uint8_t* buffer, size_t length){
+int stream_read(int stream, ring_t* ring, size_t length){
     int count = 0;
-    while(count < length && !ring_is_empty(&streams[stream].rx_ring)){
-        buffer[count] = ring_get(&streams[stream].rx_ring);
+    while(count < length && !ring_is_empty(ring)){
+        ring_put(&streams[stream].rx_ring, ring_get(ring));
         count++;
     }
     return count;
@@ -45,29 +45,11 @@ int stream_read(int stream, uint8_t* buffer, size_t length){
 * up to the given "length" bytes. Never blocks.
 * Returns the number of bytes written; returns -1 if the end of stream has been reached.
 */
-int stream_write(int stream, uint8_t* buffer, size_t length){
+int stream_write(int stream, ring_t* ring, size_t length){
     int count = 0;
     while(count < length && !ring_is_full(&streams[stream].tx_ring)){
-        ring_put(&streams[stream].tx_ring, buffer[count]);
+        ring_put(ring, ring_get(&streams[stream].tx_ring));
         count++;
     }
     return count;
-}
-
-void process_stream(int stream){
-    // if there is a read listener and there are bytes to read, call the listener
-    while (streams[stream].read_listener.callback != NULL && !ring_is_empty(&streams[stream].rx_ring)){
-        streams[stream].read_listener.callback(streams[stream].read_listener.cookie);
-        event_count++;
-    }
-    // if there is a write listener and there is room to write, call the listener
-    while (streams[stream].write_listener.callback != NULL && !ring_is_full(&streams[stream].tx_ring)){
-        streams[stream].write_listener.callback(streams[stream].write_listener.cookie);
-        event_count++;
-    }
-}
-
-// stream l'id du stream à notifier
-void stream_notify(int stream){
-    process_stream(stream);
 }
