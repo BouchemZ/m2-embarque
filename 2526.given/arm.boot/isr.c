@@ -29,6 +29,7 @@ typedef struct handler {
 handler_t handlers[NIRQS];
 
 extern uint32_t irq_timer_tick;
+extern ring_t ring;
 
 // get the status of the interrupts
 uint32_t vic_load_irqs(){
@@ -65,7 +66,7 @@ void vic_ack_irqs(uint32_t irqs){
 void uart_handler(uint8_t irq, void* uart){
     char c;
     while (uart_receive(uart,&c)){
-        ring_put(c);
+        ring_put(&ring,c);
     }
 }
 
@@ -77,8 +78,8 @@ void timer_handler(uint8_t irq, void* timer){
     */
     if (irq_timer_tick % 250 == 0){
         blink_cursor();
+        //update_top_line();
     }
-    //update_top_line();
 }
 
 /*

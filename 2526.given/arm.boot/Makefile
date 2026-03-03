@@ -12,7 +12,7 @@ BOARD=versatile
 MEMSIZE=256
 
 # Object files to build and link together
-objs= exception.o startup.o main.o uart.o console.o kprintf.o isr.o irq.o ring.o timer.o history.o
+objs= exception.o startup.o main.o uart.o console.o kprintf.o isr.o irq.o ring.o timer.o history.o stream.o
 
 #======================================================================
 # GENERIC PART OF THE MAKEFILE BELOW

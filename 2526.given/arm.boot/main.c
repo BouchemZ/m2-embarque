@@ -2,14 +2,16 @@
 
 uint32_t stack_top;
 
-volatile uint32_t head = 0;
-volatile uint32_t tail = 0 ;
-volatile uint8_t buffer[MAX_CHARS];
+ring_t ring = {
+    .head = 0,
+    .tail = 0,
+    .buffer = {0}
+};
 
 char line[80];
 uint8_t offset=0;
 
-uint32_t irq_timer_tick = 0;
+volatile uint32_t irq_timer_tick = 0;
 
 char history[HISTORY_SIZE][80];
 int history_idx = -1;
@@ -53,10 +55,29 @@ void check_memory() {
 }
 
 void process_ring(){
-  while(!ring_is_empty()){
-    uint8_t byte = ring_get();
+  while(!ring_is_empty(&ring)){
+    uint8_t byte = ring_get(&ring);
     console_echo(byte);
   }
+}
+
+stream_t streams[2]; // 0 for uart0, 1 for uart1 but not used
+uint32_t event_count = 0;
+
+void process_stream(int stream){
+    // if there is a read listener and there are bytes to read, call the listener
+    while (streams[stream].read_listener.callback != NULL && !ring_is_empty(&streams[stream].rx_ring)){
+        streams[stream].read_listener.callback(streams[stream].read_listener.cookie);
+    }
+    // if there is a write listener and there is room to write, call the listener
+    while (streams[stream].write_listener.callback != NULL && !ring_is_full(&streams[stream].tx_ring)){
+        streams[stream].write_listener.callback(streams[stream].write_listener.cookie);
+    }
+}
+
+void stream_setup(){
+    stream_set_read_listener(0, console_echo, (void*)UART0);
+    stream_set_write_listener(0, NULL, NULL);
 }
 
 /**
@@ -72,7 +93,7 @@ void _start() {
     //kprintf("Tick: %u\n", irq_timer_tick);
     process_ring();
     irqs_disable();
-    if(ring_is_empty()){
+    if(ring_is_empty(&ring)){
       wfi();
     }
     irqs_enable();

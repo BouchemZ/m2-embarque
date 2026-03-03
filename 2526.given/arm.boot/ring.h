@@ -8,13 +8,15 @@
 
 typedef uint8_t bool_t;
 
-extern volatile uint32_t head;
-extern volatile uint32_t tail;
-extern volatile uint8_t buffer[MAX_CHARS];
+typedef struct ring {
+     volatile uint32_t head;
+     volatile uint32_t tail;
+     volatile uint8_t buffer[MAX_CHARS];
+} ring_t;
 
-bool_t ring_is_empty();
-bool_t ring_is_full();
-void ring_put(uint8_t byte);
-uint8_t ring_get();
+bool_t ring_is_empty(ring_t* ring);
+bool_t ring_is_full(ring_t* ring);
+void ring_put(ring_t* ring, uint8_t byte);
+uint8_t ring_get(ring_t* ring);
 
 #endif /* RING_H_ */

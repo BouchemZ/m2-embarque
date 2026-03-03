@@ -77,8 +77,8 @@ void update_top_line(){
     
     cursor_at(1,1);
     current_line_clear();
-    cursor_at(1,1);
     kprintf("Time : %u",irq_timer_tick);
+
     //retunr to saved pos
     uart_send_string(UART0,"\033[u");
 }

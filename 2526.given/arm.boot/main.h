@@ -14,6 +14,7 @@
 #include "uart.h"
 #include "ring.h"
 #include "history.h"
+#include "stream.h"
 
 
 void panic();
